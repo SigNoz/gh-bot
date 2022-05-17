@@ -1,0 +1,11 @@
+{
+  "name": "drudgery",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:pranshuchittora/pr-bot-ci.git",
+  "author": "Pranshu Chittora <pranshu@signoz.io>",
+  "license": "MIT",
+  "dependencies": {
+    "octokit": "1.7.1"
+  }
+}
