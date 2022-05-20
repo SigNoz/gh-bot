@@ -1,4 +1,4 @@
-const { REPO_OWNER, REPO_SIGNOZ_CODE, REPO_SIGNOZ_DOCS } = require('./constants')
+const { REPO_OWNER, REPO_SIGNOZ_CODE, REPO_SIGNOZ_DOCS, pr_number, PR_DOCS_UPDATE_LABEL } = require('./constants')
 const ghapi = require('./githubapi').default
 
 /**
@@ -24,7 +24,10 @@ const getPRMetadata = async (pr_number) => {
         issue_number: pr_number
     })
 
-    return { pr_url: response.data.pull_request.html_url, pr_body: response.data.body, pr_title: response.data.title }
+    const docUpdateLabelExist = response.data.labels.find(labelData => labelData.name === PR_DOCS_UPDATE_LABEL)
+
+
+    return { pr_url: response.data.pull_request.html_url, pr_body: response.data.body, pr_title: response.data.title, docUpdateLabelExist }
 
 
 }
@@ -33,39 +36,27 @@ const getPRMetadata = async (pr_number) => {
  * Creates an issue on the SigNoz Docs repo
  */
 const createIssueOnSigNozDocs = async () => {
-    const { pr_body, pr_url, pr_title } = await getPRMetadata(pr_number)
-    await octokit.request('POST /repos/{owner}/{repo}/issues', {
-        owner: REPO_OWNER,
-        repo: REPO_SIGNOZ_DOCS,
-        title: `Docs Update: ${pr_title}`,
-        body: createIssueBodyContent(pr_body, pr_url),
-        labels: [
-            'docs'
-        ]
-    })
+    const { pr_body, pr_url, pr_title, docUpdateLabelExist } = await getPRMetadata(pr_number)
+    if (docUpdateLabelExist) {
+        await ghapi.request('POST /repos/{owner}/{repo}/issues', {
+            owner: REPO_OWNER,
+            repo: REPO_SIGNOZ_DOCS,
+            title: `Docs Update: ${pr_title}`,
+            body: createIssueBodyContent(pr_body, pr_url),
+            labels: [
+                'docs'
+            ]
+        })
+    }
 
 }
 
 
 try {
-    ghapi.request('GET /repos/{owner}/{repo}/issues/{issue_number}/comments', {
-        owner: REPO_OWNER,
-        repo: REPO_SIGNOZ_CODE,
-        issue_number: pr_number
-    }).then(resp => {
-        resp.data.forEach((comment) => {
-            const { user } = comment
-            if (user.login === 'signoz-bot') {
-                if (comment.body === BOT_DOCS_COMMENT_CHECKED) {
-                    createIssueOnSigNozDocs({
-                        pr_number
-                    })
-                }
-            }
-        })
-    }).catch(err => console.log(err))
-
+    createIssueOnSigNozDocs().then(() => {
+        console.log("Executed Successfully.")
+    })
 }
-catch (e) {
+catch (error) {
     console.error(error)
 }
