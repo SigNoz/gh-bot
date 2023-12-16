@@ -6,6 +6,6 @@
   "author": "Pranshu Chittora <pranshu@signoz.io>",
   "license": "MIT",
   "dependencies": {
-    "octokit": "1.7.1"
+    "octokit": "3.1.2"
   }
 }
